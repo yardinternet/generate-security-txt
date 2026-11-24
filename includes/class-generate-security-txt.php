@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * The file that defines the core plugin class
  *
@@ -23,19 +25,23 @@
  * version of the plugin.
  *
  * @since      1.0.0
+ *
  * @package    Generate_Security_Txt
  * @subpackage Generate_Security_Txt/includes
+ *
  * @author     Brian de Geus <wordpress@verenigingvanregistrars.nl>
  */
-class Generate_Security_Txt {
-
+class Generate_Security_Txt
+{
 	/**
 	 * The loader that's responsible for maintaining and registering all hooks that power
 	 * the plugin.
 	 *
 	 * @since    1.0.0
+	 *
 	 * @access   protected
-	 * @var      Generate_Security_Txt_Loader    $loader    Maintains and registers all hooks for the plugin.
+	 *
+	 * @var      Generate_Security_Txt_Loader       Maintains and registers all hooks for the plugin.
 	 */
 	protected $loader;
 
@@ -43,8 +49,10 @@ class Generate_Security_Txt {
 	 * The unique identifier of this plugin.
 	 *
 	 * @since    1.0.0
+	 *
 	 * @access   protected
-	 * @var      string    $plugin_name    The string used to uniquely identify this plugin.
+	 *
+	 * @var      string       The string used to uniquely identify this plugin.
 	 */
 	protected $plugin_name;
 
@@ -52,8 +60,10 @@ class Generate_Security_Txt {
 	 * The current version of the plugin.
 	 *
 	 * @since    1.0.0
+	 *
 	 * @access   protected
-	 * @var      string    $version    The current version of the plugin.
+	 *
+	 * @var      string       The current version of the plugin.
 	 */
 	protected $version;
 
@@ -66,8 +76,9 @@ class Generate_Security_Txt {
 	 *
 	 * @since    1.0.0
 	 */
-	public function __construct() {
-		if ( defined( 'GENERATE_SECURITY_TXT_VERSION' ) ) {
+	public function __construct()
+	{
+		if (defined('GENERATE_SECURITY_TXT_VERSION')) {
 			$this->version = GENERATE_SECURITY_TXT_VERSION;
 		} else {
 			$this->version = '1.0.0';
@@ -77,8 +88,6 @@ class Generate_Security_Txt {
 		$this->load_dependencies();
 		$this->set_locale();
 		$this->define_admin_hooks();
-		$this->define_public_hooks();
-
 	}
 
 	/**
@@ -95,35 +104,29 @@ class Generate_Security_Txt {
 	 * with WordPress.
 	 *
 	 * @since    1.0.0
+	 *
 	 * @access   private
 	 */
-	private function load_dependencies() {
-
+	private function load_dependencies()
+	{
 		/**
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-generate-security-txt-loader.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-generate-security-txt-loader.php';
 
 		/**
 		 * The class responsible for defining internationalization functionality
 		 * of the plugin.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-generate-security-txt-i18n.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-generate-security-txt-i18n.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the admin area.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-generate-security-txt-admin.php';
-
-		/**
-		 * The class responsible for defining all actions that occur in the public-facing
-		 * side of the site.
-		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-generate-security-txt-public.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/class-generate-security-txt-admin.php';
 
 		$this->loader = new Generate_Security_Txt_Loader();
-
 	}
 
 	/**
@@ -133,14 +136,14 @@ class Generate_Security_Txt {
 	 * with WordPress.
 	 *
 	 * @since    1.0.0
+	 *
 	 * @access   private
 	 */
-	private function set_locale() {
-
+	private function set_locale()
+	{
 		$plugin_i18n = new Generate_Security_Txt_i18n();
 
-		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
-
+		$this->loader->add_action('plugins_loaded', $plugin_i18n, 'load_plugin_textdomain');
 	}
 
 	/**
@@ -148,51 +151,34 @@ class Generate_Security_Txt {
 	 * of the plugin.
 	 *
 	 * @since    1.0.0
-	 * @access   private
-	 */
-	private function define_admin_hooks() {
-
-		$plugin_admin = new Generate_Security_Txt_Admin( $this->get_plugin_name(), $this->get_version() );
-
-		$this->loader->add_action( 'init', $plugin_admin, 'ajax_callbacks' );
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_menus' );
-
-        // Add a link to the plugins listing
-        $this->loader->add_filter( 'plugin_row_meta', $plugin_admin, 'add_custom_plugin_link', 10, 2 );
-
-        // Hook the function to the admin_notices action
-        $this->loader->add_action( 'admin_notices', $plugin_admin, 'show_admin_notification' );
-
-        // Hook the function to erase all data
-        $this->loader->add_action( 'current_screen', $plugin_admin, 'action_delete_all' );
-
-        // Hook the expiry email function to run once a day using WordPress Cron
-        $this->loader->add_action('check_securitytxt_expiration_event', $plugin_admin, 'check_securitytxt_expiration_and_send_email');
-        $this->loader->add_action('admin_init', $plugin_admin, 'schedule_securitytxt_expiration_check');
-        $this->loader->add_action('securitytxt_archiveorg_request_event', $plugin_admin, 'securitytxt_archiveorg_request_url');
-        $this->loader->add_action('admin_init', $plugin_admin, 'schedule_securitytxt_archiveorg_request');
-        $this->loader->add_action('securitytxt_verify_file_contents_event', $plugin_admin, 'securitytxt_verify_file_contents');
-        $this->loader->add_action('admin_init', $plugin_admin, 'schedule_securitytxt_verify_file_contents');
-
-	}
-
-
-	/**
-	 * Register all of the hooks related to the public-facing functionality
-	 * of the plugin.
 	 *
-	 * @since    1.0.0
 	 * @access   private
 	 */
-	private function define_public_hooks() {
+	private function define_admin_hooks()
+	{
+		$plugin_admin = new Generate_Security_Txt_Admin($this->get_plugin_name(), $this->get_version());
 
-		$plugin_public = new Generate_Security_Txt_Public( $this->get_plugin_name(), $this->get_version() );
+		$this->loader->add_action('init', $plugin_admin, 'ajax_callbacks');
+		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
+		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
+		$this->loader->add_action('admin_menu', $plugin_admin, 'add_menus');
 
-		// No usage of public assets at the moment
-//		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
-//		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
+		// Add a link to the plugins listing
+		$this->loader->add_filter('plugin_row_meta', $plugin_admin, 'add_custom_plugin_link', 10, 2);
+
+		// Hook the function to the admin_notices action
+		$this->loader->add_action('admin_notices', $plugin_admin, 'show_admin_notification');
+
+		// Hook the function to erase all data
+		$this->loader->add_action('current_screen', $plugin_admin, 'action_delete_all');
+
+		// Hook the expiry email function to run once a day using WordPress Cron
+		$this->loader->add_action('check_securitytxt_expiration_event', $plugin_admin, 'check_securitytxt_expiration_and_send_email');
+		$this->loader->add_action('admin_init', $plugin_admin, 'schedule_securitytxt_expiration_check');
+		$this->loader->add_action('securitytxt_archiveorg_request_event', $plugin_admin, 'securitytxt_archiveorg_request_url');
+		$this->loader->add_action('admin_init', $plugin_admin, 'schedule_securitytxt_archiveorg_request');
+		$this->loader->add_action('securitytxt_verify_file_contents_event', $plugin_admin, 'securitytxt_verify_file_contents');
+		$this->loader->add_action('admin_init', $plugin_admin, 'schedule_securitytxt_verify_file_contents');
 	}
 
 	/**
@@ -200,7 +186,8 @@ class Generate_Security_Txt {
 	 *
 	 * @since    1.0.0
 	 */
-	public function run() {
+	public function run()
+	{
 		$this->loader->run();
 	}
 
@@ -209,9 +196,11 @@ class Generate_Security_Txt {
 	 * WordPress and to define internationalization functionality.
 	 *
 	 * @since     1.0.0
+	 *
 	 * @return    string    The name of the plugin.
 	 */
-	public function get_plugin_name() {
+	public function get_plugin_name()
+	{
 		return $this->plugin_name;
 	}
 
@@ -219,9 +208,11 @@ class Generate_Security_Txt {
 	 * The reference to the class that orchestrates the hooks with the plugin.
 	 *
 	 * @since     1.0.0
+	 *
 	 * @return    Generate_Security_Txt_Loader    Orchestrates the hooks of the plugin.
 	 */
-	public function get_loader() {
+	public function get_loader()
+	{
 		return $this->loader;
 	}
 
@@ -229,10 +220,11 @@ class Generate_Security_Txt {
 	 * Retrieve the version number of the plugin.
 	 *
 	 * @since     1.0.0
+	 *
 	 * @return    string    The version number of the plugin.
 	 */
-	public function get_version() {
+	public function get_version()
+	{
 		return $this->version;
 	}
-
 }
